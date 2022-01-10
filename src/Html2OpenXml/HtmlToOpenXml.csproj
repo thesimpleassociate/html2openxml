@@ -7,18 +7,18 @@
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <AssemblyName>HtmlToOpenXml</AssemblyName>
     <RootNamespace>HtmlToOpenXml</RootNamespace>
-    <PackageId>HtmlToOpenXml.dll</PackageId>
+    <PackageId>BP-HtmlToOpenXml.dll</PackageId>
     <Version>2.2.0</Version>
     <PackageIcon>icon.png</PackageIcon>
     <Copyright>Copyright 2009-$([System.DateTime]::Now.Year) Olivier Nizet</Copyright>
-    <PackageReleaseNotes>Support latest OpenXml release</PackageReleaseNotes>
+    <PackageReleaseNotes>Paragraph indentation inherited from parent Paragraph</PackageReleaseNotes>
     <PackageTags>office openxml netcore html</PackageTags>
     <AssemblyVersion>2.1.0.0</AssemblyVersion>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageProjectUrl>https://github.com/onizet/html2openxml</PackageProjectUrl>
-    <RepositoryUrl>https://github.com/onizet/html2openxml</RepositoryUrl>
-    <Description>A library to convert simple or advanced html to plain OpenXml document</Description>
-    <Authors>Olivier Nizet</Authors>
+    <RepositoryUrl>https://github.com/thesimpleassociate/html2openxml</RepositoryUrl>
+    <Description>A library to convert simple or advanced html to plain OpenXml document - forked for Briefpoint to fix an issue</Description>
+    <Authors>Olivier Nizet; Chris Maffin</Authors>
     <SignAssembly>true</SignAssembly>
     <AssemblyOriginatorKeyFile>HtmlToOpenXml.snk</AssemblyOriginatorKeyFile>
     <PublicSign Condition="'$(OS)' != 'Windows_NT'">true</PublicSign>
