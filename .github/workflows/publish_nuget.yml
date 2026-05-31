@@ -58,7 +58,7 @@ jobs:
           dotnet-version: latest
 
       - name: Build
-        run: dotnet build --configuration Release /p:SourceRevisionId=$(Build.SourceVersion)
+        run: dotnet build --configuration Release /p:SourceRevisionId=${{ github.sha }}
 
       - name: Pack NuGet Package
         run: |
@@ -94,3 +94,5 @@ jobs:
             *.nupkg \
             --generate-notes \
             --draft  # Set to false when ready to publish
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
