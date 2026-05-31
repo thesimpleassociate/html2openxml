@@ -14,24 +14,20 @@ on:
         type: string
         default: '1.0.0-beta1'
         pattern: '^[1-9]{1,2}.[0-9]+.[0-9]+(-beta\d+)?$'
-      publish_to_nuget:
-        description: 'Publish to NuGet.org?'
-        required: false
-        type: boolean
-        default: true
       create_release:
         description: 'Create draft Release?'
         required: false
         type: boolean
         default: true
-    permissions:
-      id-token: write  # nuget authentication
-      contents: read
 
+permissions:
+  id-token: write  # nuget authentication
+  contents: read
 
 jobs:
   publish:
-    if: startsWith(github.ref, 'refs/tags/') || (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/master')
+    if: startsWith(github.ref, 'refs/tags/') || 
+        (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/master' && github.actor == 'onizet')
     runs-on: ubuntu-latest
 
     steps:
@@ -58,7 +54,8 @@ jobs:
           dotnet-version: latest
 
       - name: Build
-        run: dotnet build src/Html2OpenXml/HtmlToOpenXml.csproj --configuration Release /p:SourceRevisionId=${{ github.sha }}
+        run: dotnet build src/Html2OpenXml/HtmlToOpenXml.csproj \
+            --configuration Release /p:SourceRevisionId=${{ github.sha }}
 
       - name: Pack NuGet Package
         run: |
@@ -73,20 +70,28 @@ jobs:
             exit 1
           fi
 
+      - name: Approve
+        uses: trstringer/manual-approval@v1
+        with:
+            secret: ${{ github.TOKEN }}
+            approvers: onizet
+            minimum-approvals: 1
+            issue-title: "Approval for publishing to Nuget.org"
+            issue-body: "Please approve or deny the deployment to Nuget.org"
+            exclude-workflow-initiator-as-approver: false
+ 
       - name: NuGet login (OIDC)
         uses: NuGet/login@v1
-        id: login
-        if: inputs.publish_to_nuget
+        id: nuget-login
         with:
           user: ${{ secrets.NUGET_USER }}
 
       - name: Push to NuGet.org
-        if: inputs.publish_to_nuget
         run: |
           dotnet nuget push ./nupkg/*.nupkg \
             --source https://api.nuget.org/v3/index.json \
             --skip-duplicate \
-            --api-key ${{ steps.login.outputs.NUGET_API_KEY }}
+            --api-key "${{ steps.nuget-login.outputs.NUGET_API_KEY }}"
 
       - name: Create GitHub Release
         if: inputs.create_release
