@@ -54,7 +54,8 @@ jobs:
           dotnet-version: latest
 
       - name: Build
-        run: dotnet build src/Html2OpenXml/HtmlToOpenXml.csproj \
+        run: |
+          dotnet build src/Html2OpenXml/HtmlToOpenXml.csproj \
             --configuration Release /p:SourceRevisionId=${{ github.sha }}
 
       - name: Pack NuGet Package
