@@ -23,6 +23,7 @@ on:
 permissions:
   id-token: write  # nuget authentication
   contents: read
+  issues: write # create issue to request approval
 
 jobs:
   publish:
