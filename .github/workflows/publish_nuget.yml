@@ -57,14 +57,16 @@ jobs:
       - name: Build
         run: |
           dotnet build src/Html2OpenXml/HtmlToOpenXml.csproj \
-            --configuration Release /p:SourceRevisionId=${{ github.sha }}
+            --configuration Release /p:SourceRevisionId=${{ github.sha }} \
+            /p:ContinuousIntegrationBuild=true /p:Deterministic=true \
 
       - name: Pack NuGet Package
         run: |
           dotnet pack src/Html2OpenXml/HtmlToOpenXml.csproj \
             --configuration Release \
             --output ./nupkg \
-            -- /p:PackageVersion=${{ inputs.version }}
+            /p:PackageVersion=${{ inputs.version }}
+
       - name: Verify Package Created
         run: |
           if [ ! -f ./nupkg/*.nupkg ]; then
