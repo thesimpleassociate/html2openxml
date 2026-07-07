@@ -545,6 +545,57 @@ namespace HtmlToOpenXml.Tests
             }
         }
 
+        [Test(Description = "List nested in an indented container must apply its own indentation in addition to the inherited one")]
+        public void IndentedParent_ReturnsList_CombiningIndentation()
+        {
+            var elements = converter.Parse(@"<div style=""margin-left: 0.5in"">
+                <ol>
+                    <li>Item 1
+                        <ol><li>Item 1.1</li></ol>
+                    </li>
+                </ol>
+            </div>");
+
+            var paragraphs = elements.OfType<Paragraph>().ToArray();
+            Assert.That(paragraphs, Has.Length.EqualTo(2));
+            var indent1 = paragraphs[0].ParagraphProperties?.Indentation;
+            var indent2 = paragraphs[1].ParagraphProperties?.Indentation;
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(indent1?.Left?.Value, Is.EqualTo("1440"),
+                    "Level 1 = inherited indent (720) + own indent (720)");
+                Assert.That(indent1?.Hanging?.Value, Is.EqualTo("360"));
+                Assert.That(indent2?.Left?.Value, Is.EqualTo("2160"),
+                    "Level 2 = inherited indent (720) + own indent (1440)");
+            }
+            AssertThatOpenXmlDocumentIsValid();
+        }
+
+        [Test(Description = "List authored inside an indented `p` is auto-closed by HTML5 parsing; its indentation must still be inherited")]
+        public void IndentedParagraphWrapper_ReturnsList_CombiningIndentation()
+        {
+            var elements = converter.Parse(
+                @"<p style=""margin-left: 0.5in""><ol>
+                    <li>Item 1
+                        <ol><li>Item 1.1</li></ol>
+                    </li>
+                </ol></p>");
+
+            var paragraphs = elements.OfType<Paragraph>().ToArray();
+            Assert.That(paragraphs, Has.Length.EqualTo(2));
+            var indent1 = paragraphs[0].ParagraphProperties?.Indentation;
+            var indent2 = paragraphs[1].ParagraphProperties?.Indentation;
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(indent1?.Left?.Value, Is.EqualTo("1440"),
+                    "Level 1 = inherited indent (720) + own indent (720)");
+                Assert.That(indent1?.Hanging?.Value, Is.EqualTo("360"));
+                Assert.That(indent2?.Left?.Value, Is.EqualTo("2160"),
+                    "Level 2 = inherited indent (720) + own indent (1440)");
+            }
+            AssertThatOpenXmlDocumentIsValid();
+        }
+
         [Test(Description = "Nested list must be a children of a `li` tag but some editor are not respecting the W3C standard (issue #173)")]
         public async Task NestedNumberList_NonCompliant_ReturnsIncrementalIndentation()
         {
