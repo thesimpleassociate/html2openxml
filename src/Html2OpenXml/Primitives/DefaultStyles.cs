@@ -24,8 +24,9 @@ public class DefaultStyles
     public string CaptionStyle { get; set; } = PredefinedStyles.Caption;
 
     /// <summary>
-    /// Default style applied to plain paragraphs (<c>p</c>) when no CSS class matches
-    /// a document style. When <see langword="null"/> (the default), no style is applied.
+    /// Default style applied to the implicit paragraphs wrapping loose inline content
+    /// (content standing outside any block element).
+    /// When <see langword="null"/> (the default), no style is applied.
     /// </summary>
     /// <value>null</value>
     public string? ParagraphStyle { get; set; }

@@ -89,6 +89,7 @@ class BlockElementExpression: PhrasingElementExpression
         ParsingContext context, IEnumerable<AngleSharp.Dom.INode> childNodes)
     {
         return ComposeChildren(context, childNodes, paraProperties,
+            isProcessingRoot: node is AngleSharp.Html.Dom.IHtmlBodyElement,
             (runs) => {
                 if (styleAttributes.RequiresPageBreakBefore())
                 {
@@ -214,15 +215,6 @@ class BlockElementExpression: PhrasingElementExpression
             }
         }
 
-        // fall back to the configured default paragraph style for plain `p` elements
-        if (paraProperties.ParagraphStyleId is null
-            && context.DocumentStyle.DefaultStyles.ParagraphStyle is string defaultParagraphStyle
-            && node.LocalName.Equals("p", StringComparison.OrdinalIgnoreCase))
-        {
-            paraProperties.ParagraphStyleId =
-                context.DocumentStyle.GetParagraphStyle(defaultParagraphStyle);
-        }
-
         var margin = styleAttributes.GetMargin("margin");
         Indentation? indentation = null;
         if (!margin.IsEmpty)
@@ -311,11 +303,15 @@ class BlockElementExpression: PhrasingElementExpression
     /// <param name="context">The child parsing context.</param>
     /// <param name="childNodes">The list of child nodes.</param>
     /// <param name="paragraphProperties">The parent paragraph properties to apply.</param>
+    /// <param name="isProcessingRoot">Whether the child nodes stand at the root of the parsed content
+    /// (the implicit paragraphs wrapping loose inline content then receive the configured
+    /// default paragraph style).</param>
     /// <param name="preAction">Optionally insert new runs at the beginning of the processing.</param>
     /// <param name="postAction">Optionally insert new runs at the end of the processing.</param>
-    internal static IEnumerable<OpenXmlElement> ComposeChildren(ParsingContext context, 
+    internal static IEnumerable<OpenXmlElement> ComposeChildren(ParsingContext context,
         IEnumerable<AngleSharp.Dom.INode> childNodes,
         ParagraphProperties paragraphProperties,
+        bool isProcessingRoot = false,
         Action<IList<OpenXmlElement>>? preAction = null,
         Action<IList<OpenXmlElement>>? postAction = null)
     {
@@ -347,7 +343,7 @@ class BlockElementExpression: PhrasingElementExpression
 
                 if (runs.Count > 0)
                 {
-                    flowElements.Add(CreateParagraph(context, runs, paragraphProperties));
+                    flowElements.Add(CreateParagraph(context, runs, paragraphProperties, isProcessingRoot));
                     runs.Clear();
                 }
 
@@ -359,7 +355,7 @@ class BlockElementExpression: PhrasingElementExpression
         postAction?.Invoke(runs);
 
         if (runs.Count > 0)
-            flowElements.Add(CreateParagraph(context, runs, paragraphProperties));
+            flowElements.Add(CreateParagraph(context, runs, paragraphProperties, isProcessingRoot));
 
         return flowElements;
     }
@@ -367,13 +363,23 @@ class BlockElementExpression: PhrasingElementExpression
     /// <summary>
     /// Create a new Paragraph and combine all the runs.
     /// </summary>
-    private static Paragraph CreateParagraph(ParsingContext context, IList<OpenXmlElement> runs, ParagraphProperties paraProperties)
+    private static Paragraph CreateParagraph(ParsingContext context, IList<OpenXmlElement> runs,
+        ParagraphProperties paraProperties, bool isProcessingRoot = false)
     {
         Paragraph p = new();
         if (paraProperties.HasChildren)
             p.ParagraphProperties = (ParagraphProperties) paraProperties.CloneNode(true);
 
         context.CascadeStyles(p);
+
+        // implicit paragraphs standing at the root receive the configured default style
+        if (isProcessingRoot
+            && p.ParagraphProperties?.ParagraphStyleId is null
+            && context.DocumentStyle.DefaultStyles.ParagraphStyle is string defaultStyle)
+        {
+            p.ParagraphProperties ??= new();
+            p.ParagraphProperties.ParagraphStyleId = context.DocumentStyle.GetParagraphStyle(defaultStyle);
+        }
 
         p.Append(runs);
 

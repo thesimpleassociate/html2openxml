@@ -126,7 +126,7 @@ For 50 years, <b>WWF</b> has been protecting the future of nature. The world's l
             Assert.That(paragraph.ParagraphProperties?.ParagraphStyleId?.Val?.Value, Is.EqualTo("CustomIntenseQuoteStyle"));
         }
 
-        [Test(Description = "Default paragraph style applies to plain `p` but not to list items")]
+        [Test(Description = "Default paragraph style applies to implicit paragraphs wrapping loose inline content, not to explicit `p` nor list items")]
         public void SetDefaultParagraphStyle_ReturnsAppliedStyle()
         {
             converter.HtmlStyles.AddStyle(new Style {
@@ -135,14 +135,17 @@ For 50 years, <b>WWF</b> has been protecting the future of nature. The world's l
             });
             converter.HtmlStyles.DefaultStyles.ParagraphStyle = "Response";
 
-            var elements = converter.Parse("<p>Some paragraph</p><ol><li>Item 1</li></ol>");
+            var elements = converter.Parse("Some loose text<p>Some paragraph</p><ol><li>Item 1</li></ol>");
 
             var paragraphs = elements.OfType<Paragraph>().ToArray();
-            Assert.That(paragraphs, Has.Length.EqualTo(2));
+            Assert.That(paragraphs, Has.Length.EqualTo(3));
             using (Assert.EnterMultipleScope())
             {
-                Assert.That(paragraphs[0].ParagraphProperties?.ParagraphStyleId?.Val?.Value, Is.EqualTo("Response"));
-                Assert.That(paragraphs[1].ParagraphProperties?.ParagraphStyleId?.Val?.Value, Is.EqualTo("ListParagraph"),
+                Assert.That(paragraphs[0].ParagraphProperties?.ParagraphStyleId?.Val?.Value, Is.EqualTo("Response"),
+                    "Loose inline content gets the default paragraph style");
+                Assert.That(paragraphs[1].ParagraphProperties?.ParagraphStyleId, Is.Null,
+                    "Explicit `p` elements are not styled");
+                Assert.That(paragraphs[2].ParagraphProperties?.ParagraphStyleId?.Val?.Value, Is.EqualTo("ListParagraph"),
                     "List items keep the list paragraph style");
             }
             AssertThatOpenXmlDocumentIsValid();
