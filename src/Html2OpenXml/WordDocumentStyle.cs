@@ -85,6 +85,15 @@ public sealed class WordDocumentStyle
         }
     }
 
+    /// <summary>
+    /// Retrieve the full style definition registered under the given name or style id.
+    /// </summary>
+    internal Style? GetStyleElement(string name)
+    {
+        knownStyles.TryGetValue(name, out var style);
+        return style;
+    }
+
     internal ParagraphStyleId? GetParagraphStyle(string name)
     {
         var style = GetStyle(name, StyleValues.Paragraph);

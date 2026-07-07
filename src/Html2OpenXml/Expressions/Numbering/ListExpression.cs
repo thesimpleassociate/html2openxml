@@ -9,6 +9,7 @@
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND/OR FITNESS FOR A
  * PARTICULAR PURPOSE.
  */
+using System.Globalization;
 using AngleSharp.Dom;
 using AngleSharp.Html.Dom;
 using DocumentFormat.OpenXml;
@@ -43,6 +44,9 @@ sealed class ListExpression(IHtmlElement node) : NumberingExpressionBase(node)
          "lower-greek", "upper-greek",
          "lower-roman", "upper-roman",
          "decimal-tiered" /* not W3C compliant */];
+    /// <summary>Extra indentation applied per nesting level when the list item style
+    /// defines its own indentation.</summary>
+    private const int NestedLevelIndentation = 780;
     private ParagraphStyleId? listParagraphStyleId;
 
 
@@ -84,30 +88,6 @@ sealed class ListExpression(IHtmlElement node) : NumberingExpressionBase(node)
         // +1 because index starts on 1 and not 0
         var level = Math.Min(listContext.Level, MaxLevel+1);
 
-        // resolve the indentation inherited from the ancestors (eg, a parent with margin-left),
-        // as the list own indentation must be applied in addition to it
-        var ancestorIndent = context.Properties<int>("listIndent");
-        var probe = new Paragraph();
-        context.CascadeStyles(probe);
-        int.TryParse(probe.ParagraphProperties?.Indentation?.Left?.Value, out int inheritedIndent);
-
-        // HTML5 parsing auto-closes a `p` when a list begins, so a list authored inside
-        // an indented paragraph ends up as its sibling, leaving behind an empty `p` which
-        // produces no output. Recover its indentation as the inherited one
-        if (inheritedIndent == 0
-            && node.PreviousElementSibling is IHtmlElement prevParagraph
-            && prevParagraph.LocalName.Equals("p", StringComparison.OrdinalIgnoreCase)
-            && prevParagraph.ChildElementCount == 0
-            && string.IsNullOrWhiteSpace(prevParagraph.TextContent))
-        {
-            var margin = prevParagraph.GetStyles().GetMargin("margin");
-            if (margin.Left.IsFixed && margin.Left.Value > 0)
-                inheritedIndent = (int) margin.Left.ValueInDxa;
-        }
-
-        inheritedIndent = Math.Max(inheritedIndent, ancestorIndent);
-        context.Properties("listIndent", inheritedIndent);
-
         foreach (IHtmlElement liNode in liNodes.Cast<IHtmlElement>())
         {
             var expression = new BlockElementExpression(liNode);
@@ -123,7 +103,7 @@ sealed class ListExpression(IHtmlElement node) : NumberingExpressionBase(node)
                 if (tableProperties == null)
                     table.PrependChild(tableProperties = new());
 
-                tableProperties.TableIndentation ??= new() { Width = tableIndentation * 2 + inheritedIndent };
+                tableProperties.TableIndentation ??= new() { Width = tableIndentation * 2 };
                 // ensure to restrain the table width to the list item
                 if (tableProperties.TableWidth?.Type?.Value == TableWidthUnitValues.Pct
                     && tableProperties.TableWidth?.Width?.Value == "5000")
@@ -135,6 +115,11 @@ sealed class ListExpression(IHtmlElement node) : NumberingExpressionBase(node)
             // ensure to filter out any non-paragraph like any nested table
             var paragraphs = childElements.OfType<Paragraph>();
             var listItemStyleId = GetStyleIdForListItem(context.DocumentStyle, liNode);
+
+            // the list item style may define its own indentation (eg, to align the marker
+            // with the surrounding paragraphs' first-line indent). The numbering level
+            // indentation would override it, so promote it as direct formatting
+            var styleIndentation = GetStyleIndentation(context.DocumentStyle, listItemStyleId);
 
             if (paragraphs.Any())
             {
@@ -151,16 +136,15 @@ sealed class ListExpression(IHtmlElement node) : NumberingExpressionBase(node)
                     };
                 }
 
-                // the indentation cascaded from the ancestors would override the numbering
-                // level indentation, so combine both to keep the hierarchical indent
-                var indentation = p.ParagraphProperties.Indentation;
-                int.TryParse(indentation?.Left?.Value, out int paraIndent);
-                if (paraIndent == 0) paraIndent = inheritedIndent;
-                if (paraIndent != 0)
+                if (styleIndentation is not null && p.ParagraphProperties.Indentation is null)
                 {
-                    indentation ??= p.ParagraphProperties.Indentation = new();
-                    indentation.Left = (paraIndent + level * Indentation * 2).ToString();
-                    indentation.Hanging ??= Indentation.ToString();
+                    var indentation = (Indentation) styleIndentation.CloneNode(true);
+                    if (level > 1 && int.TryParse(indentation.Left?.Value, out int styleLeft))
+                    {
+                        indentation.Left = (styleLeft + level * NestedLevelIndentation)
+                            .ToString(CultureInfo.InvariantCulture);
+                    }
+                    p.ParagraphProperties.Indentation = indentation;
                 }
             }
 
@@ -173,11 +157,20 @@ sealed class ListExpression(IHtmlElement node) : NumberingExpressionBase(node)
 
                 p.ParagraphProperties ??= new();
                 p.ParagraphProperties.ParagraphStyleId ??= (ParagraphStyleId?) listItemStyleId!.CloneNode(true);
-                int.TryParse(p.ParagraphProperties.Indentation?.Left?.Value, out int standaloneIndent);
-                if (standaloneIndent == 0) standaloneIndent = inheritedIndent;
-                p.ParagraphProperties.Indentation = new() {
-                    Left = (standaloneIndent + level * Indentation * 2).ToString()
-                };
+                // align the paragraph with the text column of the list item
+                if (styleIndentation is not null && int.TryParse(styleIndentation.Left?.Value, out int styleLeft))
+                {
+                    p.ParagraphProperties.Indentation = new() {
+                        Left = (styleLeft + (level > 1 ? level * NestedLevelIndentation : 0))
+                            .ToString(CultureInfo.InvariantCulture)
+                    };
+                }
+                else
+                {
+                    p.ParagraphProperties.Indentation = new() {
+                        Left = (level * Indentation * 2).ToString()
+                    };
+                }
             }
 
             foreach (var child in childElements)
@@ -185,7 +178,30 @@ sealed class ListExpression(IHtmlElement node) : NumberingExpressionBase(node)
         }
 
         context.Properties("listContext", parentContext);
-        context.Properties("listIndent", ancestorIndent);
+    }
+
+    /// <summary>
+    /// Resolve the indentation defined by the list item's paragraph style. Only styles
+    /// defining both a left indent and a hanging indent participate (ie, styles that
+    /// position the number marker relative to the text column); others fall back to
+    /// the numbering level indentation.
+    /// </summary>
+    private static Indentation? GetStyleIndentation(WordDocumentStyle documentStyle, ParagraphStyleId? styleId)
+    {
+        if (styleId?.Val?.Value is not string id)
+            return null;
+
+        var style = documentStyle.GetStyleElement(id);
+        if (style is null) return null;
+
+        // styles authored programmatically may carry a ParagraphProperties instead of
+        // the schema-typed StyleParagraphProperties (both serialize as w:pPr)
+        var indentation = style.StyleParagraphProperties?.Indentation
+            ?? style.GetFirstChild<ParagraphProperties>()?.Indentation;
+
+        if (indentation?.Left?.HasValue != true || indentation.Hanging?.HasValue != true)
+            return null;
+        return indentation;
     }
 
     /// <summary>

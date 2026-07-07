@@ -24,6 +24,13 @@ public class DefaultStyles
     public string CaptionStyle { get; set; } = PredefinedStyles.Caption;
 
     /// <summary>
+    /// Default style applied to plain paragraphs (<c>p</c>) when no CSS class matches
+    /// a document style. When <see langword="null"/> (the default), no style is applied.
+    /// </summary>
+    /// <value>null</value>
+    public string? ParagraphStyle { get; set; }
+
+    /// <summary>
     /// Default style for new endnote texts
     /// </summary>
     /// <value>EndnoteText</value>

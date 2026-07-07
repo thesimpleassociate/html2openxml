@@ -545,41 +545,48 @@ namespace HtmlToOpenXml.Tests
             }
         }
 
-        [Test(Description = "List nested in an indented container must apply its own indentation in addition to the inherited one")]
-        public void IndentedParent_ReturnsList_CombiningIndentation()
+        [Test(Description = "List style defining a left+hanging indent must be promoted as direct formatting so it overrides the numbering level indentation")]
+        public void ListStyleWithHangingIndent_ReturnsList_UsingStyleIndentation()
         {
-            var elements = converter.Parse(@"<div style=""margin-left: 0.5in"">
-                <ol>
-                    <li>Item 1
-                        <ol><li>Item 1.1</li></ol>
-                    </li>
-                </ol>
-            </div>");
+            converter.HtmlStyles.AddStyle(new Style(
+                new StyleParagraphProperties(new Indentation { Left = "1440", Hanging = "720" })) {
+                Type = StyleValues.Paragraph,
+                StyleId = "FormIntList"
+            });
+            converter.HtmlStyles.DefaultStyles.ListParagraphStyle = "FormIntList";
+
+            var elements = converter.Parse("<ol><li>Item 1</li><li>Item 2</li></ol>");
 
             var paragraphs = elements.OfType<Paragraph>().ToArray();
             Assert.That(paragraphs, Has.Length.EqualTo(2));
-            var indent1 = paragraphs[0].ParagraphProperties?.Indentation;
-            var indent2 = paragraphs[1].ParagraphProperties?.Indentation;
             using (Assert.EnterMultipleScope())
             {
-                Assert.That(indent1?.Left?.Value, Is.EqualTo("1440"),
-                    "Level 1 = inherited indent (720) + own indent (720)");
-                Assert.That(indent1?.Hanging?.Value, Is.EqualTo("360"));
-                Assert.That(indent2?.Left?.Value, Is.EqualTo("2160"),
-                    "Level 2 = inherited indent (720) + own indent (1440)");
+                foreach (var p in paragraphs)
+                {
+                    Assert.That(p.ParagraphProperties?.ParagraphStyleId?.Val?.Value, Is.EqualTo("FormIntList"));
+                    Assert.That(p.ParagraphProperties?.Indentation?.Left?.Value, Is.EqualTo("1440"),
+                        "Marker must sit at the style's `left - hanging` position");
+                    Assert.That(p.ParagraphProperties?.Indentation?.Hanging?.Value, Is.EqualTo("720"));
+                }
             }
             AssertThatOpenXmlDocumentIsValid();
         }
 
-        [Test(Description = "List authored inside an indented `p` is auto-closed by HTML5 parsing; its indentation must still be inherited")]
-        public void IndentedParagraphWrapper_ReturnsList_CombiningIndentation()
+        [Test(Description = "Nested list items add a per-level offset on top of the style indentation")]
+        public void NestedList_StyleWithHangingIndent_ReturnsIncrementalIndentation()
         {
-            var elements = converter.Parse(
-                @"<p style=""margin-left: 0.5in""><ol>
-                    <li>Item 1
-                        <ol><li>Item 1.1</li></ol>
-                    </li>
-                </ol></p>");
+            converter.HtmlStyles.AddStyle(new Style(
+                new StyleParagraphProperties(new Indentation { Left = "1440", Hanging = "720" })) {
+                Type = StyleValues.Paragraph,
+                StyleId = "FormIntList"
+            });
+            converter.HtmlStyles.DefaultStyles.ListParagraphStyle = "FormIntList";
+
+            var elements = converter.Parse(@"<ol>
+                <li>Item 1
+                    <ol><li>Item 1.1</li></ol>
+                </li>
+            </ol>");
 
             var paragraphs = elements.OfType<Paragraph>().ToArray();
             Assert.That(paragraphs, Has.Length.EqualTo(2));
@@ -587,12 +594,23 @@ namespace HtmlToOpenXml.Tests
             var indent2 = paragraphs[1].ParagraphProperties?.Indentation;
             using (Assert.EnterMultipleScope())
             {
-                Assert.That(indent1?.Left?.Value, Is.EqualTo("1440"),
-                    "Level 1 = inherited indent (720) + own indent (720)");
-                Assert.That(indent1?.Hanging?.Value, Is.EqualTo("360"));
-                Assert.That(indent2?.Left?.Value, Is.EqualTo("2160"),
-                    "Level 2 = inherited indent (720) + own indent (1440)");
+                Assert.That(indent1?.Left?.Value, Is.EqualTo("1440"), "Level 1 = style indent");
+                Assert.That(indent1?.Hanging?.Value, Is.EqualTo("720"));
+                Assert.That(indent2?.Left?.Value, Is.EqualTo("3000"),
+                    "Level 2 = style indent (1440) + level offset (2 * 780)");
+                Assert.That(indent2?.Hanging?.Value, Is.EqualTo("720"));
             }
+            AssertThatOpenXmlDocumentIsValid();
+        }
+
+        [Test(Description = "Default list style has no hanging indent: keep relying on the numbering level indentation")]
+        public void DefaultListStyle_ReturnsList_WithNoDirectIndentation()
+        {
+            var elements = converter.Parse("<ol><li>Item 1</li></ol>");
+
+            var paragraphs = elements.OfType<Paragraph>().ToArray();
+            Assert.That(paragraphs, Has.Length.EqualTo(1));
+            Assert.That(paragraphs[0].ParagraphProperties?.Indentation, Is.Null);
             AssertThatOpenXmlDocumentIsValid();
         }
 

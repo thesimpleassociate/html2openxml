@@ -214,6 +214,15 @@ class BlockElementExpression: PhrasingElementExpression
             }
         }
 
+        // fall back to the configured default paragraph style for plain `p` elements
+        if (paraProperties.ParagraphStyleId is null
+            && context.DocumentStyle.DefaultStyles.ParagraphStyle is string defaultParagraphStyle
+            && node.LocalName.Equals("p", StringComparison.OrdinalIgnoreCase))
+        {
+            paraProperties.ParagraphStyleId =
+                context.DocumentStyle.GetParagraphStyle(defaultParagraphStyle);
+        }
+
         var margin = styleAttributes.GetMargin("margin");
         Indentation? indentation = null;
         if (!margin.IsEmpty)
