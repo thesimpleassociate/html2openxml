@@ -1,19 +1,16 @@
-[![Latest version](https://img.shields.io/nuget/v/HtmlToOpenXml.dll.svg)](https://www.nuget.org/packages/HtmlToOpenXml.dll)
-[![License MIT](https://img.shields.io/badge/license-MIT-green.svg)](https://github.com/onizet/html2openxml/blob/master/LICENSE)
-[![NuGet](https://img.shields.io/nuget/dt/HtmlToOpenXml.dll.svg)]()
-[![codecov.io](https://codecov.io/github/onizet/html2openxml/coverage.svg?branch=master)](https://codecov.io/github/onizet/html2openxml?branch=master)
+![Latest version](https://img.shields.io/nuget/v/HtmlToOpenXml.dll.svg)
+![Download Counts](https://img.shields.io/nuget/dt/HtmlToOpenXml.dll.svg)
+[![MIT License](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/onizet/html2openxml/blob/dev/LICENSE)
 
-[![netstandard1.3](https://img.shields.io/badge/netstandard-1.3-brightgreen.svg)](https://img.shields.io/badge/netstandard-1.3-brightgreen.svg)
-[![netstandard2.0](https://img.shields.io/badge/netstandard-2.0-brightgreen.svg)](https://img.shields.io/badge/netstandard-2.0-brightgreen.svg)
-[![net46](https://img.shields.io/badge/net-46-brightgreen.svg)](https://img.shields.io/badge/net-46-brightgreen.svg)
+# What is HtmlToOpenXml?
 
-# What is Html2OpenXml?
+HtmlToOpenXml is a small .Net library that convert simple or advanced HTML to plain OpenXml components. This program has started in 2009, initially to convert user's comments into Word.
 
-Html2OpenXml is a small .Net library that convert simple or advanced HTML to plain OpenXml components. This program has started in 2009, initially to convert user's comments from SharePoint to Word.
+This library supports both **.Net Framework 4.6.2**, **.NET Standard 2.0**, **.NET 8** **.NET 10** which are all LTS.
 
-This library supports both **.Net Core (netstandard1.3)** and **.Net Framework 4.6**.
+Depends on [DocumentFormat.OpenXml](https://www.nuget.org/packages/DocumentFormat.OpenXml/) and [AngleSharp](https://www.nuget.org/packages/AngleSharp).
 
-Depends on [DocumentFormat.OpenXml](https://www.nuget.org/packages/DocumentFormat.OpenXml/).
+-> [Official Nuget Package](https://www.nuget.org/packages/HtmlToOpenXml.dll)
 
 ## See Also
 
@@ -26,44 +23,52 @@ Depends on [DocumentFormat.OpenXml](https://www.nuget.org/packages/DocumentForma
 
 Refer to [w3schools’ tag](http://www.w3schools.com/tags/default.asp) list to see their meaning
 
-* &lt;a&gt;
-* &lt;h1-h6&gt;
-* &lt;abbr&gt; and &lt;acronym&gt;
-* &lt;b&gt;, &lt;i&gt;, &lt;u&gt;, &lt;s&gt;, &lt;del&gt;, &lt;ins&gt;, &lt;em&gt;, &lt;strike&gt;, &lt;strong&gt;
-* &lt;br&gt; and &lt;hr&gt;
-* &lt;img&gt;, &lt;figcaption&gt;
-* &lt;table&gt;, &lt;td&gt;, &lt;tr&gt;, &lt;th&gt;, &lt;tbody&gt;, &lt;thead&gt;, &lt;tfoot&gt; and &lt;caption&gt;
-* &lt;cite&gt;
-* &lt;div&gt;, &lt;span&gt;, &lt;font&gt; and &lt;p&gt;
-* &lt;pre&gt;
-* &lt;sub&gt; and &lt;sup&gt;
-* &lt;ul&gt;, &lt;ol&gt; and &lt;li&gt;
-* &lt;dd&gt; and &lt;dt&gt;
-* &lt;q&gt; and &lt;blockquote&gt; (since 1.5)
-* &lt;article&gt;, &lt;aside&gt;, &lt;section&gt; are considered like &lt;div&gt;
+* `a`
+* `h1-h6`
+* `abbr` and `acronym`
+* `b`, `i`, `u`, `s`, `del`, `ins`, `em`, `strike`, `strong`
+* `br` and `hr`
+* `img`, `figcaption` and `svg`
+* `table`, `td`, `tr`, `th`, `tbody`, `thead`, `tfoot`, `caption` and `col`
+* `cite`
+* `div`, `span`, `time`, `font` and `p`
+* `pre`
+* `sub` and `sup`
+* `ul`, `ol` and `li`
+* `dd` and `dt`
+* `q`, `blockquote`, `dfn`
+* `article`, `aside`, `section` are considered like `div`
 
-Javascript (&lt;script&gt;), CSS &lt;style&gt;, &lt;meta&gt; and other not supported tags does not generate an error but are **ignored**.
+Javascript (`script`), CSS `style`, `meta`, comments, buttons and input controls are ignored.
+Other tags are treated like `div`.
 
-## Tolerance for bad formed HTML
+In v1 and v2, Javascript (`script`), CSS `style`, `meta`, comments and other not supported tags does not generate an error but are **ignored**.
 
-The parsing of the Html is done using a custom Regex-based enumerator. These are supported:
+## Html Parser
 
-|   | samples |
-| ------------- | ------------- |
-| Ignore case | &lt;span&gt;Some text&lt;SPAN&gt; |
-| Missing closing tag or invalid tag position | &lt;i&gt;Here&lt;b&gt; is &lt;/i&gt; some&lt;/b&gt; bad formed html. |
-| no need to be XHTML compliant | Both &lt;br&gt; and &lt;br/&gt; are valid |
-| Color | red, #ff0000, #f00, rgb(255,0,0,.5), hsl(0, 100%, 50%) are all the red color |
-| Attributes | &lt;table id=table1&gt; or &lt;table id="table1"&gt; |
+In v3, the parsing of the Html relies on AngleSharp package, which follows the W3C specifications and actively supports Html5.
+
+In v1 and v2, the parsing of the Html was done using a custom Regex-based enumerator and was more flexible, but leaving a complex code, hard to maintain.
+
+## How to implement or debug features
+
+My reference bibles cover both OpenXml and HTML:
+
+* [MDN](https://developer.mozilla.org/en-US/docs/Web/HTML)
+* [W3Schools](https://www.w3schools.com/html/default.asp)
+* [OpenXml MSDN](https://learn.microsoft.com/en-us/dotnet/api/documentformat.openxml.wordprocessing?view=openxml-3.0.1)
+
+Open MS Word or Apple Pages and design your expected output. Save as a DOCX file, then rename as a ZIP. Extract the content and inspect those files:
+`document.xml`, `numbering.xml` (for list) and `styles.xml`.
 
 ## Acknowledgements
 
-Thank you to all contributors that share their bug fixes: scwebgroup, ddforge, daviderapicavoli, worstenbrood, jodybullen, BenBurns, OleK, scarhand, imagremlin, antgraf, mdeclercq, pauldbentley, xjpmauricio, jairoXXX, giorand, bostjanKlemenc, AaronLS, taishmanov.
+Thank you to all contributors that share their bug fixes (in no particular order): scwebgroup, ddforge, daviderapicavoli, worstenbrood, jodybullen, BenBurns, OleK, scarhand, imagremlin, antgraf, mdeclercq, pauldbentley, xjpmauricio, jairoXXX, giorand, bostjanKlemenc, AaronLS, taishmanov.
 And thanks to David Podhola for the Nuget package.
 
 Logo provided with the permission of [Enhanced Labs Design Studio](http://www.enhancedlabs.com).
 
 ## Support
 
-This project is open source and I do my best to support it in my spare time. I'm always happy to receive Pull Request and grateful for the time you have taken
+This project is open source and I do my best to support it in my spare time. I'm always happy to receive Pull Request and grateful for the time you have taken. Please target branch `dev` only.
 If you have questions, don't hesitate to get in touch with me!

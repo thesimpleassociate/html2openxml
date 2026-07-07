@@ -9,141 +9,156 @@
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND/OR FITNESS FOR A
  * PARTICULAR PURPOSE.
  */
-using System;
-using System.ComponentModel;
-using System.Globalization;
 
-namespace HtmlToOpenXml
+namespace HtmlToOpenXml;
+
+/// <summary>
+/// Represents a Html Margin.
+/// </summary>
+struct Margin
 {
-    /// <summary>
-    /// Represents a Html Unit (ie: 120px, 10em, ...).
-    /// </summary>
-    struct Margin
+    /// <summary>Represents an empty margin (not defined).</summary>
+    public static readonly Margin Empty = new();
+
+    private Unit top;
+    private Unit right;
+    private Unit bottom;
+    private Unit left;
+
+
+    /// <summary>Apply to all four sides.</summary>
+    public Margin(Unit all)
     {
-        private Unit[] sides;
+        this.top = all;
+        this.right = all;
+        this.bottom = all;
+        this.left = all;
+    }
 
+    /// <summary>Top and bottom | left and right.</summary>
+    public Margin(Unit topAndBottom, Unit leftAndRight)
+    {
+        this.top = topAndBottom;
+        this.bottom = topAndBottom;
+        this.left = leftAndRight;
+        this.right = leftAndRight;
+    }
 
-        public Margin(Unit top, Unit right, Unit bottom, Unit left)
+    /// <summary>Top | left and right | bottom.</summary>
+    public Margin(Unit top, Unit leftAndRight, Unit bottom)
+    {
+        this.top = top;
+        this.right = leftAndRight;
+        this.bottom = bottom;
+        this.left = leftAndRight;
+    }
+
+    /// <summary>Top | right | bottom | left.</summary>
+    public Margin(Unit top, Unit right, Unit bottom, Unit left)
+    {
+        this.top = top;
+        this.right = right;
+        this.bottom = bottom;
+        this.left = left;
+    }
+
+    /// <summary>
+    /// Parse the margin style attribute.
+    /// </summary>
+    /// <remarks>
+    /// The margin property can have from one to four values.
+    /// <b>margin:25px 50px 75px 100px;</b>
+    /// top margin is 25px
+    /// right margin is 50px
+    /// bottom margin is 75px
+    /// left margin is 100px
+    /// 
+    /// <b>margin:25px 50px 75px;</b>
+    /// top margin is 25px
+    /// right and left margins are 50px
+    /// bottom margin is 75px
+    /// 
+    /// <b>margin:25px 50px;</b>
+    /// top and bottom margins are 25px
+    /// right and left margins are 50px
+    /// 
+    /// <b>margin:25px;</b>
+    /// all four margins are 25px
+    /// </remarks>
+    public static Margin Parse(ReadOnlySpan<char> span)
+    {
+        if (span.IsEmpty || span.IsWhiteSpace())
+            return Empty;
+
+        Span<Range> tokens = stackalloc Range[5];
+        return span.SplitCompositeAttribute(tokens) switch
         {
-            this.sides = new[] { top, right, bottom, left };
-        }
+            1 => new Margin(Unit.Parse(span.Slice(tokens[0]), UnitMetric.Pixel)),
+            2 => new Margin(
+                Unit.Parse(span.Slice(tokens[0]), UnitMetric.Pixel),
+                Unit.Parse(span.Slice(tokens[1]), UnitMetric.Pixel)),
+            3 => new Margin(
+                Unit.Parse(span.Slice(tokens[0]), UnitMetric.Pixel),
+                Unit.Parse(span.Slice(tokens[1]), UnitMetric.Pixel),
+                Unit.Parse(span.Slice(tokens[2]), UnitMetric.Pixel)),
+            4 => new Margin(
+                Unit.Parse(span.Slice(tokens[0]), UnitMetric.Pixel),
+                Unit.Parse(span.Slice(tokens[1]), UnitMetric.Pixel),
+                Unit.Parse(span.Slice(tokens[2]), UnitMetric.Pixel),
+                Unit.Parse(span.Slice(tokens[3]), UnitMetric.Pixel)),
+            _ => Empty
+        };
+    }
 
-        /// <summary>
-        /// Parse the margin style attribute.
-        /// </summary>
-        /// <remarks>
-        /// The margin property can have from one to four values.
-        /// <b>margin:25px 50px 75px 100px;</b>
-        /// top margin is 25px
-        /// right margin is 50px
-        /// bottom margin is 75px
-        /// left margin is 100px
-        /// 
-        /// <b>margin:25px 50px 75px;</b>
-        /// top margin is 25px
-        /// right and left margins are 50px
-        /// bottom margin is 75px
-        /// 
-        /// <b>margin:25px 50px;</b>
-        /// top and bottom margins are 25px
-        /// right and left margins are 50px
-        /// 
-        /// <b>margin:25px;</b>
-        /// all four margins are 25px
-        /// </remarks>
-        public static Margin Parse(String str)
-        {
-            if (str == null) return new Margin();
+    //____________________________________________________________________
+    //
 
-            String[] parts = str.Split(HttpUtility.WhiteSpaces);
-            switch (parts.Length)
-            {
-                case 1:
-                    {
-                        Unit all = Unit.Parse(parts[0]);
-                        return new Margin(all, all, all, all);
-                    }
-                case 2:
-                    {
-                        Unit u1 = Unit.Parse(parts[0]);
-                        Unit u2 = Unit.Parse(parts[1]);
-                        return new Margin(u1, u2, u1, u2);
-                    }
-                case 3:
-                    {
-                        Unit u1 = Unit.Parse(parts[0]);
-                        Unit u2 = Unit.Parse(parts[1]);
-                        Unit u3 = Unit.Parse(parts[2]);
-                        return new Margin(u1, u2, u3, u2);
-                    }
-                case 4:
-                    {
-                        Unit u1 = Unit.Parse(parts[0]);
-                        Unit u2 = Unit.Parse(parts[1]);
-                        Unit u3 = Unit.Parse(parts[2]);
-                        Unit u4 = Unit.Parse(parts[3]);
-                        return new Margin(u1, u2, u3, u4);
-                    }
-            }
+    /// <summary>
+    /// Gets or sets the unit of the bottom side.
+    /// </summary>
+    public Unit Bottom
+    {
+        readonly get => bottom;
+        set => bottom = value;
+    }
 
-            return new Margin();
-        }
+    /// <summary>
+    /// Gets or sets the unit of the left side.
+    /// </summary>
+    public Unit Left
+    {
+        readonly get => left;
+        set => left = value;
+    }
 
-		private void EnsureSides()
-		{
-			if (this.sides == null) sides = new Unit[4];
-		}
+    /// <summary>
+    /// Gets or sets the unit of the top side.
+    /// </summary>
+    public Unit Top
+    {
+        readonly get => top;
+        set => top = value;
+    }
 
-        //____________________________________________________________________
-        //
+    /// <summary>
+    /// Gets or sets the unit of the right side.
+    /// </summary>
+    public Unit Right
+    {
+        readonly get => right;
+        set => right = value;
+    }
 
-        /// <summary>
-		/// Gets or sets the unit of the bottom side.
-        /// </summary>
-        public Unit Bottom
-        {
-            get { return sides == null ? Unit.Empty : sides[2]; }
-			set { EnsureSides(); sides[2] = value; }
-        }
+    public readonly bool IsValid
+    {
+        get => Left.IsValid && Right.IsValid && Bottom.IsValid && Top.IsValid;
+    }
 
-        /// <summary>
-		/// Gets or sets the unit of the left side.
-        /// </summary>
-        public Unit Left
-        {
-			get { return sides == null ? Unit.Empty : sides[3]; }
-			set { EnsureSides(); sides[3] = value; }
-        }
-
-        /// <summary>
-		/// Gets or sets the unit of the top side.
-        /// </summary>
-        public Unit Top
-        {
-			get { return sides == null ? Unit.Empty : sides[0]; }
-			set { EnsureSides(); sides[0] = value; }
-        }
-
-        /// <summary>
-		/// Gets or sets the unit of the right side.
-        /// </summary>
-        public Unit Right
-        {
-			get { return sides == null ? Unit.Empty : sides[1]; }
-			set { EnsureSides(); sides[1] = value; }
-        }
-
-        public bool IsValid
-        {
-            get { return sides != null && Left.IsValid && Right.IsValid && Bottom.IsValid && Top.IsValid; }
-        }
-
-		/// <summary>
-		/// Gets whether at least one side has been specified.
-		/// </summary>
-		public bool IsEmpty
-		{
-			get { return sides == null || !(Left.IsValid || Right.IsValid || Bottom.IsValid || Top.IsValid); }
-		}
+    /// <summary>
+    /// Gets whether at least one side has been specified.
+    /// </summary>
+    public readonly bool IsEmpty
+    {
+        get => !(Left.IsValid || Right.IsValid || Bottom.IsValid || Top.IsValid);
     }
 }

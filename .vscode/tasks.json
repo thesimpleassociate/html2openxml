@@ -1,17 +1,33 @@
 {
-    "version": "0.1.0",
+    "version": "2.0.0",
     "command": "dotnet",
-    "isShellCommand": true,
     "args": [],
     "tasks": [
         {
-            "taskName": "build",
+            "label": "build",
+            "type": "shell",
+            "command": "dotnet",
             "args": [
-                "${workspaceRoot}/src/Html2OpenXml/HtmlToOpenXml.csproj",
-                "${workspaceRoot}/examples/Demo/Demo.csproj"
+                "build",
+                "${workspaceRoot}"
             ],
-            "isBuildCommand": true,
+            "problemMatcher": "$msCompile",
+            "group": {
+                "_id": "build",
+                "isDefault": false
+            }
+        },
+        {
+            "label": "Build Code Coverage",
+            "type": "process",
+            "command": "dotnet",
+            "args": [
+                "test",
+                "/p:CollectCoverage=true",
+                "/p:CoverletOutputFormat=lcov",
+                "/p:CoverletOutput=./coverage"
+            ],
             "problemMatcher": "$msCompile"
-        }
+        },
     ]
 }

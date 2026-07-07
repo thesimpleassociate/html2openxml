@@ -1,0 +1,57 @@
+﻿/* Copyright (C) Olivier Nizet https://github.com/onizet/html2openxml - All Rights Reserved
+ * 
+ * This source is subject to the Microsoft Permissive License.
+ * Please see the License.txt file for more information.
+ * All other rights reserved.
+ * 
+ * THIS CODE AND INFORMATION ARE PROVIDED "AS IS" WITHOUT WARRANTY OF ANY 
+ * KIND, EITHER EXPRESSED OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND/OR FITNESS FOR A
+ * PARTICULAR PURPOSE.
+ */
+using DocumentFormat.OpenXml.Packaging;
+
+namespace HtmlToOpenXml.IO;
+
+/// <summary>
+/// Represents an image and its metadata.
+/// </summary>
+sealed class HtmlImageInfo(string source, string partId)
+{
+    /// <summary>
+    /// The URI identifying this cached image information.
+    /// </summary>
+    public string Source { get; set; } = source;
+
+    /// <summary>
+    /// The Unique identifier of the ImagePart in the <see cref="MainDocumentPart"/>.
+    /// </summary>
+    public string ImagePartId { get; set; } = partId;
+
+    /// <summary>
+    /// Gets or sets the original size of the image.
+    /// </summary>
+    public Size Size { get; set; }
+
+    /// <summary>
+    /// Gets the content type of the image.
+    /// </summary>
+    public PartTypeInfo TypeInfo { get; set; }
+
+    /// <summary>
+    /// Gets or sets whether this image is linked externally rather than embedded.
+    /// When true, <see cref="ImagePartId"/> contains an external relationship ID instead of an embedded image part ID.
+    /// </summary>
+    public bool IsExternal { get; set; }
+}
+
+/// <summary>
+/// Typed dictionary of <see cref="HtmlImageInfo"/> where the Source URI is the identifier.
+/// </summary>
+sealed class HtmlImageInfoCollection : System.Collections.ObjectModel.KeyedCollection<string, HtmlImageInfo>
+{
+    protected override string GetKeyForItem(HtmlImageInfo item)
+    {
+        return item.Source;
+    }
+}

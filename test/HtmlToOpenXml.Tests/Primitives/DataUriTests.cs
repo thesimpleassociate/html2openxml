@@ -1,7 +1,7 @@
 using HtmlToOpenXml.IO;
 using NUnit.Framework;
 
-namespace HtmlToOpenXml.Tests
+namespace HtmlToOpenXml.Tests.Primitives
 {
     /// <summary>
     /// Tests inline image (base 64).
@@ -9,17 +9,17 @@ namespace HtmlToOpenXml.Tests
     [TestFixture]
     public class DataUriTests
     {
-        [Test]
-        public void ParseInline()
+        [TestCase("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUAAAAFCAYAAACNbyblAAAAHElEQVQI12P4//8/w38GIAXDIBKE0DHxgljNBAAO9TXL0Y4OHwAAAABJRU5ErkJggg==", Description = "red dot")]
+        [TestCase("data:text/html,%3Ch1%3EHello%2C%20World%21%3C%2Fh1%3E")]
+        [TestCase("data:text/plain;charset=UTF-8,the%20data:1234,5678")]
+        public void InlineData_ShouldSucceed(string uri)
         {
-            // red dot
-            string uri = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUAAAAFCAYAAACNbyblAAAAHElEQVQI12P4//8/w38GIAXDIBKE0DHxgljNBAAO9TXL0Y4OHwAAAABJRU5ErkJggg==";
-            DataUri.TryCreate(uri, out DataUri result);
-            Assert.IsNotNull(result);
+            DataUri.TryCreate(uri, out DataUri? result);
+            Assert.That(result, Is.Not.Null);
         }
 
         [Test]
-        public void ParseMultiline()
+        public void MultilineData_ShouldSucceed()
         {
             string uri = @"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAYABgAAD/2wBDAAoHBwgHBgoICAgLCgoLDhgQDg0NDh0VFhEYIx8l
 JCIfIiEmKzcvJik0KSEiMEExNDk7Pj4+JS5ESUM8SDc9Pjv/wAALCABVAEABAREA/8QAHwAA
@@ -63,8 +63,16 @@ OfDEXhz/AIRbxtAkV1pYNrJHNC0qSbPlDKQDg8e3tVD4Q6BKPGmp67Y2lxbaJ5ckVo04IMgZ
 1KjnqAByfXFezMiv95Q2PUZoCKOigY9BSkA9QDjmgqGBDAEHsaia0tnQxtbxMjdVKAg0W9pb
 Wilba3ihB6iNAufyoltLaZw8tvFIw6FkBNSgADA4FLRRRRRRRX//2Q==
 ";
-            DataUri.TryCreate(uri, out DataUri result);
-            Assert.IsNotNull(result);
+            DataUri.TryCreate(uri, out DataUri? result);
+            Assert.That(result, Is.Not.Null);
+        }
+
+        [TestCase("data:text/plain;charset=utf-123,the%20data:1234,5678")]
+        [TestCase("data:image/png;base64,abc")]
+        public void InvalidData_ShouldFail(string uri)
+        {
+            DataUri.TryCreate(uri, out DataUri ?result);
+            Assert.That(result, Is.Null);
         }
     }
 }

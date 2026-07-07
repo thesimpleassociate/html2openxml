@@ -1,5 +1,3 @@
-using System;
-using System.Collections.Generic;
 using NUnit.Framework;
 using NUnit.Framework.Interfaces;
 using NUnit.Framework.Internal;
@@ -21,7 +19,7 @@ namespace HtmlToOpenXml.Tests
             this.type = type;
         }
 
-        IEnumerable<TestMethod> ITestBuilder.BuildFrom(IMethodInfo method, Test suite)
+        IEnumerable<TestMethod> ITestBuilder.BuildFrom(IMethodInfo method, Test? suite)
         {
             if (method.IsGenericMethodDefinition && type != null)
             {
