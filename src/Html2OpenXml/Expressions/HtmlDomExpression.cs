@@ -57,7 +57,8 @@ abstract class HtmlDomExpression
             { TagNames.Img, el => new ImageExpression((IHtmlImageElement) el) },
             { TagNames.Ins, el => new PhrasingElementExpression((IHtmlElement) el, new Underline() { Val = UnderlineValues.Single }) },
             { TagNames.Kbd, el => new PhrasingElementExpression((IHtmlElement) el) },
-            { TagNames.Mark, el => new PhrasingElementExpression((IHtmlElement) el, new Shading { Val = ShadingPatternValues.Clear, Fill = "FFFF00" /* yellow */ }) },
+            // BP: <mark> defaults to Word highlight (was Shading fill) so the downstream Shading->Highlight patch is no longer needed
+            { TagNames.Mark, el => new PhrasingElementExpression((IHtmlElement) el, new Highlight { Val = HighlightColorValues.Yellow }) },
             { TagNames.NoBr, el => new PhrasingElementExpression((IHtmlElement) el) },
             { TagNames.Ol, el => new ListExpression((IHtmlElement) el) },
             { TagNames.Pre, el => new PreElementExpression((IHtmlElement) el) },
