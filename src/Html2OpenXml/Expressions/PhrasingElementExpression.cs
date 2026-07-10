@@ -162,6 +162,14 @@ class PhrasingElementExpression(IHtmlElement node, OpenXmlLeafElement? styleProp
             }
         }
 
+        // BP: apply Briefpoint highlight-* classes as a Word highlight color (see MarkHighlightColorMap).
+        // Overrides the <mark> default-yellow highlight when a recognized color class is present.
+        var mappedHighlight = MarkHighlightColorMap.TryGetHighlight(node.ClassList);
+        if (mappedHighlight != null)
+        {
+            runProperties.Highlight = mappedHighlight;
+        }
+
         HtmlFont font = styleAttributes.GetFont("font");
 
         if (font.Style == FontStyle.Italic)
