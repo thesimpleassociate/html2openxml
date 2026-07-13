@@ -2,9 +2,11 @@
 ![Download Counts](https://img.shields.io/nuget/dt/HtmlToOpenXml.dll.svg)
 [![MIT License](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/onizet/html2openxml/blob/dev/LICENSE)
 
+> This is a Briefpoint fork of [onizet/html2openxml](https://github.com/onizet/html2openxml). See [Briefpoint Fork Changes](#briefpoint-fork-changes) below for what diverges from upstream.
+
 # What is HtmlToOpenXml?
 
-HtmlToOpenXml is a small .Net library that convert simple or advanced HTML to plain OpenXml components. This program has started in 2009, initially to convert user's comments into Word.
+HtmlToOpenXml is a small .Net library that convert simple or advanced HTML to plain OpenXml components.
 
 This library supports both **.Net Framework 4.6.2**, **.NET Standard 2.0**, **.NET 8** **.NET 10** which are all LTS.
 
@@ -52,7 +54,7 @@ In v1 and v2, the parsing of the Html was done using a custom Regex-based enumer
 
 ## How to implement or debug features
 
-My reference bibles cover both OpenXml and HTML:
+Reference material covering both OpenXml and HTML:
 
 * [MDN](https://developer.mozilla.org/en-US/docs/Web/HTML)
 * [W3Schools](https://www.w3schools.com/html/default.asp)
@@ -61,14 +63,10 @@ My reference bibles cover both OpenXml and HTML:
 Open MS Word or Apple Pages and design your expected output. Save as a DOCX file, then rename as a ZIP. Extract the content and inspect those files:
 `document.xml`, `numbering.xml` (for list) and `styles.xml`.
 
-## Acknowledgements
+## Briefpoint Fork Changes
 
-Thank you to all contributors that share their bug fixes (in no particular order): scwebgroup, ddforge, daviderapicavoli, worstenbrood, jodybullen, BenBurns, OleK, scarhand, imagremlin, antgraf, mdeclercq, pauldbentley, xjpmauricio, jairoXXX, giorand, bostjanKlemenc, AaronLS, taishmanov.
-And thanks to David Podhola for the Nuget package.
+This fork carries a small set of behavior changes on top of upstream, made to match Briefpoint's document output requirements:
 
-Logo provided with the permission of [Enhanced Labs Design Studio](http://www.enhancedlabs.com).
-
-## Support
-
-This project is open source and I do my best to support it in my spare time. I'm always happy to receive Pull Request and grateful for the time you have taken. Please target branch `dev` only.
-If you have questions, don't hesitate to get in touch with me!
+* **`<mark>` highlight colors** — `<mark>` now maps to a real Word highlight (`w:highlight`) instead of a shading fill, and `highlight-*` CSS classes (`highlight-yellow`, `highlight-red`, `highlight-blue`, `highlight-green`, `highlight-pink`) map to the corresponding Word highlight color, so colors chosen in the response editor survive into the generated docx.
+* **Default paragraph style on implicit root paragraphs** — restores the v2 `DefaultStyles.ParagraphStyle` behavior (dropped in the v3 rewrite): loose inline content at the root of the parsed fragment gets wrapped in a paragraph stamped with the default style, without cascading that style onto every descendant paragraph.
+* **List item indentation inherits from the list's paragraph style** — when the resolved list item style defines a left/hanging indent, it's applied as direct formatting on each `li` paragraph (with a per-nesting-level offset), overriding the numbering level's indentation instead of using it. Ports a v2-era patch forward into the v3 expression pipeline.
